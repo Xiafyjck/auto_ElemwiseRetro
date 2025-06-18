@@ -1,2 +1,13 @@
-ElemwiseRetro/dataset/CAS_data.json
-ElemwiseRetro/dataset/solid-state_dataset_20200713.json
+ElemwiseRetro/dataset/*
+!ElemwiseRetro/dataset/preprocessed dataset will be saved.txt
+
+# Result files
+ElemwiseRetro/result/*
+!ElemwiseRetro/result/result will be saved.txt
+
+# Model files
+ElemwiseRetro/model/*
+!ElemwiseRetro/model/model will be saved.txt
+
+# pyc
+*.pyc

@@ -2,6 +2,7 @@ import json
 import copy
 import random
 import sys
+import argparse
 import numpy as np
 import pickle as pk
 import torch
@@ -15,6 +16,14 @@ from sklearn.model_selection import train_test_split
 
 from Data import get_SourceElem, get_AnionPart, get_Source_Anion_ratio
 from Model import PrecursorClassifier, collate_batch
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Train Precursor Model')
+parser.add_argument('--pooling_mode', action='store_true', help='True: weighted-attentioned mean pooling / False: source element-wise')
+parser.add_argument('--globalfactor', action='store_true', help='True: concatenate initial node vector with global pooling vector')
+parser.add_argument('--gru_mode', action='store_true', help='True: After GCN, GRU prediction / False: After GCN, ResNet prediction')
+parser.add_argument('--training_type', choices=['RandSplit', 'TimeSplit'], default='RandSplit', help='Training type: RandSplit or TimeSplit')
+args = parser.parse_args()
 
 random.seed(8888)
 torch.manual_seed(8888)
@@ -298,10 +307,7 @@ if __name__ == "__main__":
     embedding_dict = elemnet
 
 
-    training_type = input("Which model to test ? (RandSplit or TimeSplit) = ")
-    if training_type not in ['RandSplit', 'TimeSplit']:
-        print("Invalid name of model type !")
-        sys.exit()
+    training_type = args.training_type
     if training_type == 'RandSplit':
         check_time_transferability = False
     else:
@@ -448,9 +454,9 @@ if __name__ == "__main__":
         3. pooling_mode, globalfactor, gru_mode = False, True, True (Source elem-wise w. GLA)
         4. pooling_mode, globalfactor, gru_mode = True, False, True (GLA)
     """
-    pooling_mode = False    # True : weighted-attentioned mean pooling / False : source element-wise
-    globalfactor = False    # True : concatenate initial node vector with global pooling vector
-    gru_mode = False        # True : After GCN, GRU prediction         / False : After GCN, ResNet prediction
+    pooling_mode = args.pooling_mode    # True : weighted-attentioned mean pooling / False : source element-wise
+    globalfactor = args.globalfactor    # True : concatenate initial node vector with global pooling vector
+    gru_mode = args.gru_mode        # True : After GCN, GRU prediction         / False : After GCN, ResNet prediction
     print('[Pooling', pooling_mode, ', Globalfactor', globalfactor, ', GRU', gru_mode, '] mode')
 
     model_params = {

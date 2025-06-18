@@ -1,6 +1,7 @@
 import json
 import copy
 import random
+import argparse
 import numpy as np
 import pickle as pk
 import torch
@@ -185,10 +186,20 @@ if __name__ == "__main__":
     # Prepare model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
+    parser = argparse.ArgumentParser(description='Train Temperature Model')
+    parser.add_argument('--pooling_mode', action='store_true', help='True: weighted-attentioned mean pooling / False: source element-wise')
+    parser.add_argument('--globalfactor', action='store_true', help='True: concatenate initial node vector with global pooling vector')
+    parser.add_argument('--gru_mode', action='store_true', help='True: After GCN, GRU prediction / False: After GCN, ResNet prediction')
+    parser.add_argument('--training_type', choices=['RandSplit', 'TimeSplit'], default='RandSplit', help='Training type: RandSplit or TimeSplit')
+    args = parser.parse_args()
+    
+    pooling_mode = args.pooling_mode if hasattr(args, 'pooling_mode') else True
+    globalfactor = args.globalfactor
+    
     model_params = {
             "task": "Regression",
-            "pooling": True,
-            "globalfactor": False,
+            "pooling": pooling_mode,
+            "globalfactor": globalfactor,
             "device": device,
             "robust": True,
             "n_targets": 1,

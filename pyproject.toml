@@ -1,0 +1,50 @@
+[project]
+name = "auto-elemwiseretro"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.7.0",
+    "torch_geometric",
+    "pyg_lib",
+    "torch_scatter",
+    "torch_sparse",
+    "torch_cluster",
+    "torch_spline_conv",
+    "numpy",
+    "pymatgen",
+    "scikit-learn>=1.7.0",
+    "seaborn>=0.13.2",
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu128"}
+]
+pyg_lib = [
+    { index = "geometry-cu128"}
+]
+torch_scatter = [
+    { index = "geometry-cu128"},
+]
+torch_sparse = [
+    { index = "geometry-cu128"},
+]
+torch_cluster = [
+    { index = "geometry-cu128"},
+]
+torch_spline_conv = [
+    { index = "geometry-cu128"},
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[[tool.uv.index]]
+name = "geometry-cu128"
+url = "https://data.pyg.org/whl/torch-2.7.0+cu128.html"
+explicit = true
+format = "flat"

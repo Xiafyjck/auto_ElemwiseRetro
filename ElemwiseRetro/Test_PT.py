@@ -2,6 +2,7 @@ import json
 import random
 import math
 import sys
+import argparse
 import numpy as np
 import pandas as pd
 import pickle as pk
@@ -44,10 +45,11 @@ temp_max = 1600
 
 
 # Prepare data
-training_type = input("Which model to test ? (RandSplit or TimeSplit) = ")
-if training_type not in ['RandSplit', 'TimeSplit']:
-    print("Invalid name of model type !")
-    sys.exit()
+parser = argparse.ArgumentParser(description='Test Precursor and Temperature Models')
+parser.add_argument('--training_type', choices=['RandSplit', 'TimeSplit'], default='RandSplit', help='Training type: RandSplit or TimeSplit')
+args = parser.parse_args()
+
+training_type = args.training_type
 if training_type == 'RandSplit':
     check_time_transferability = False
 else:
