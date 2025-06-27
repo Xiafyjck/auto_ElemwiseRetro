@@ -645,4 +645,4 @@ if __name__ == "__main__":
     pk.dump(dataset, open('./dataset/preprocessed_data_TP.sav', 'wb'))
     pk.dump(model, open(f'./model/trained_model_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
     pk.dump(accuracy_result, open(f'./result/accuracy_result_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
-    pk.dump(train_val_loss, open(f'./result/train_val_loss_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
+    # pk.dump(train_val_loss, open(f'./result/train_val_loss_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
