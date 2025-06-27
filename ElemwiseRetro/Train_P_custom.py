@@ -1,5 +1,6 @@
 import json
 import copy
+import os
 import random
 import sys
 import argparse
@@ -25,6 +26,7 @@ parser.add_argument('--gru_mode', action='store_true', help='True: After GCN, GR
 parser.add_argument('--dataset_name', type=str, default='ceder', help='Dataset name')
 args = parser.parse_args()
 
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 random.seed(8888)
 torch.manual_seed(8888)
 np.random.seed(8888)
