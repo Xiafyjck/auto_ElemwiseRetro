@@ -637,9 +637,9 @@ if __name__ == "__main__":
             print("Top-%d Accuracy for precursors_template_set of testset : %f" %(k+1, round(float(te_set_accuracy),4)))
             accuracy_result['Top-'+str(k+1)+'_template_set_acc'] = round(float(te_set_accuracy),4)
       
-    train_val_loss = {'Model_train_loss_curve' : train_loss_curve,
-                      'Model_val_loss_curve'   : val_loss_curve,
-                      }
+    # train_val_loss = {'Model_train_loss_curve' : train_loss_curve,
+    #                   'Model_val_loss_curve'   : val_loss_curve,
+    #                   }
     
     pk.dump(idx_te, open('./dataset/test_idx_TP.sav', 'wb'))
     pk.dump(dataset, open('./dataset/preprocessed_data_TP.sav', 'wb'))
