@@ -22,7 +22,6 @@ parser = argparse.ArgumentParser(description='Train Precursor Model')
 parser.add_argument('--pooling_mode', action='store_true', help='True: weighted-attentioned mean pooling / False: source element-wise')
 parser.add_argument('--globalfactor', action='store_true', help='True: concatenate initial node vector with global pooling vector')
 parser.add_argument('--gru_mode', action='store_true', help='True: After GCN, GRU prediction / False: After GCN, ResNet prediction')
-parser.add_argument('--training_type', choices=['RandSplit', 'TimeSplit'], default='RandSplit', help='Training type: RandSplit or TimeSplit')
 args = parser.parse_args()
 
 random.seed(8888)
@@ -295,38 +294,12 @@ if __name__ == "__main__":
         embedding_dict = json.load(json_file)
 
 
-    training_type = args.training_type
-    if training_type == 'RandSplit':
-        check_time_transferability = False
-    else:
-        check_time_transferability = True
+
 
     # Prepare data
-    if check_time_transferability == False:
-        file_path = "./dataset/InorgSyn_dataset_TP.json"
-        with open(file_path, "r") as json_file:
-            data = json.load(json_file)
-    else:
-        print("-----------Checking time transferability-----------")
-        file_path = "./dataset/InorgSyn_dataset_TP2.json"
-        with open(file_path, "r") as json_file:
-            data2 = json.load(json_file)
-
-        data_in = []
-        data_out = []
-        from datetime import datetime
-        for dd in data2:
-            if dd['pubdate'] != 'N/A':
-                pub_date1 = datetime.strptime(dd['pubdate'], "%Y-%m-%d")
-                pub_date2 = datetime.strptime("2016-01-01", "%Y-%m-%d")
-                day_diff = (pub_date2 - pub_date1).days
-                if day_diff <= 0:
-                    data_out.append(dd)
-                else:
-                    data_in.append(dd)
-
-        data = data_in + data_out
-        print(len(data_in), len(data_out), len(data))
+    file_path = "./dataset/InorgSyn_dataset_TP.json"
+    with open(file_path, "r") as json_file:
+        data = json.load(json_file)
 
     file_path = "./dataset/pre_anion_part.json"
     with open(file_path, "r") as json_file:
