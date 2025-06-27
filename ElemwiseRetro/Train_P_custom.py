@@ -28,6 +28,8 @@ args = parser.parse_args()
 random.seed(8888)
 torch.manual_seed(8888)
 np.random.seed(8888)
+torch.backends.cudnn.benchmark=False
+torch.use_deterministic_algorithms(True)
 
 
 def seed_worker(worker_id):
