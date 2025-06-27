@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser(description='Train Precursor Model')
 parser.add_argument('--pooling_mode', action='store_true', help='True: weighted-attentioned mean pooling / False: source element-wise')
 parser.add_argument('--globalfactor', action='store_true', help='True: concatenate initial node vector with global pooling vector')
 parser.add_argument('--gru_mode', action='store_true', help='True: After GCN, GRU prediction / False: After GCN, ResNet prediction')
+parser.add_argument('--dataset_name', type=str, default='ceder', help='Dataset name')
 args = parser.parse_args()
 
 random.seed(8888)
@@ -296,16 +297,17 @@ if __name__ == "__main__":
 
 
 
+    dataset_name = args.dataset_name
     # Prepare data
-    file_path = "./dataset/InorgSyn_dataset_TP.json"
+    file_path = f"./dataset/{dataset_name}/InorgSyn_dataset_TP.json"
     with open(file_path, "r") as json_file:
         data = json.load(json_file)
 
-    file_path = "./dataset/pre_anion_part.json"
+    file_path = f"./dataset/{dataset_name}/pre_anion_part.json"
     with open(file_path, "r") as json_file:
         pre_anion_part = json.load(json_file)
 
-    file_path = "./dataset/stoi_dict.json"
+    file_path = f"./dataset/{dataset_name}/stoi_dict.json"
     with open(file_path, "r") as json_file:
         stoi_dict = json.load(json_file)
 
@@ -378,17 +380,10 @@ if __name__ == "__main__":
             else:
                 print(p_source_elem[0], template, r_stoi_list[j], r_int_comp, pre)
 
-    if check_time_transferability == False:
-        train_set, test_set = train_test_split(dataset, test_size=0.1, random_state=7)
-        train_set, val_set = train_test_split(train_set, test_size=0.1112, random_state=7)
-    else:
-        train_set, test_set = dataset[:len(data_in)], dataset[len(data_in):]
-        train_set, val_set = train_test_split(train_set, test_size=0.1112, random_state=7)
+    train_set, test_set = train_test_split(dataset, test_size=0.1, random_state=7)
+    train_set, val_set = train_test_split(train_set, test_size=0.1112, random_state=7)
 
-    if check_time_transferability == False:
-        print("Total dataset size : %d, (train/val/test = %d/%d/%d = 8:1:1)" % (len(dataset), len(train_set), len(val_set), len(test_set)))
-    else:
-        print("Total dataset size : %d, (train/val/test = %d/%d/%d)" % (len(dataset), len(train_set), len(val_set), len(test_set)))
+    print("Total dataset size : %d, (train/val/test = %d/%d/%d = 8:1:1)" % (len(dataset), len(train_set), len(val_set), len(test_set)))
 
     data_params = {"batch_size": 128, "num_workers": 0, "pin_memory": False,
                    "shuffle": False, "collate_fn": collate_batch,
@@ -641,15 +636,8 @@ if __name__ == "__main__":
                       'Model_val_loss_curve'   : val_loss_curve,
                       }
     
-    if check_time_transferability == False:
-        pk.dump(idx_te, open('./dataset/test_idx_TP.sav', 'wb'))
-        pk.dump(dataset, open('./dataset/preprocessed_data_TP.sav', 'wb'))
-        pk.dump(model, open('./model/trained_model_TP_'+str(pooling_mode)+str(globalfactor)+str(gru_mode)+'.sav', 'wb'))
-        pk.dump(accuracy_result, open('./result/accuracy_result_TP_'+str(pooling_mode)+str(globalfactor)+str(gru_mode)+'.sav', 'wb'))
-        pk.dump(train_val_loss, open('./result/train_val_loss_TP_'+str(pooling_mode)+str(globalfactor)+str(gru_mode)+'.sav', 'wb'))
-    else:
-        pk.dump(idx_te, open('./dataset/test_idx_TP_time.sav', 'wb'))
-        pk.dump(dataset, open('./dataset/preprocessed_data_TP_time.sav', 'wb'))
-        pk.dump(model, open('./model/trained_model_TP_'+str(pooling_mode)+str(globalfactor)+str(gru_mode)+'_time.sav', 'wb'))
-        pk.dump(accuracy_result, open('./result/accuracy_result_TP_'+str(pooling_mode)+str(globalfactor)+str(gru_mode)+'_time.sav', 'wb'))
-        pk.dump(train_val_loss, open('./result/train_val_loss_TP_'+str(pooling_mode)+str(globalfactor)+str(gru_mode)+'_time.sav', 'wb'))
+    pk.dump(idx_te, open('./dataset/test_idx_TP.sav', 'wb'))
+    pk.dump(dataset, open('./dataset/preprocessed_data_TP.sav', 'wb'))
+    pk.dump(model, open(f'./model/trained_model_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
+    pk.dump(accuracy_result, open(f'./result/accuracy_result_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
+    pk.dump(train_val_loss, open(f'./result/train_val_loss_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
