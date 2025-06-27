@@ -504,6 +504,7 @@ if __name__ == "__main__":
     #         best_model_wts = copy.deepcopy(model.state_dict())
 
     # model.load_state_dict(best_model_wts) # load best model weights
+    # pk.dump(model, open(f'./model/trained_model_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
     model = pk.load(open(f'./model/trained_model_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'rb'))
 
     model.eval()
@@ -643,6 +644,6 @@ if __name__ == "__main__":
     
     pk.dump(idx_te, open('./dataset/test_idx_TP.sav', 'wb'))
     pk.dump(dataset, open('./dataset/preprocessed_data_TP.sav', 'wb'))
-    pk.dump(model, open(f'./model/trained_model_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
     pk.dump(accuracy_result, open(f'./result/accuracy_result_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
     # pk.dump(train_val_loss, open(f'./result/train_val_loss_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
+    # pk.dump(model, open(f'./model/trained_model_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
