@@ -8,6 +8,8 @@ ElemwiseRetro/result/*
 # Model files
 ElemwiseRetro/model/*
 !ElemwiseRetro/model/model will be saved.txt
+!ElemwiseRetro/model/trained_model_TP_ceder_FalseFalseFalse.sav
+!ElemwiseRetro/model/trained_model_TP_retro_TrueFalseFalse.sav
 
 # pyc
 *.pyc
