@@ -628,13 +628,13 @@ if __name__ == "__main__":
     accuracy_result['indiv_template_acc'] = round(template_te_accuracy,4)
     for k in range(template_top_k_pred_te.shape[0]):
         if k == 0:
-            b = (template_top_k_pred_te[k].numpy() == template_true_value_te).float()
+            b = (template_top_k_pred_te[k] == template_true_value_te).float()
             topk_reaction_correct = scatter_min(b, pre_set_idx_te.cpu(), dim=0)[0]
             te_set_accuracy = sum(topk_reaction_correct)/len(test_set)
             print("Top-%d Accuracy for precursors_template_set of testset : %f" %(k+1, round(float(te_set_accuracy),4)))
             accuracy_result['Top-'+str(k+1)+'_template_set_acc'] = round(float(te_set_accuracy),4)
         else:
-            kth_b = (template_top_k_pred_te[k].numpy() == template_true_value_te).float()
+            kth_b = (template_top_k_pred_te[k] == template_true_value_te).float()
             kth_reaction_correct = scatter_min(kth_b, pre_set_idx_te.cpu(), dim=0)[0]
             topk_reaction_correct = torch.logical_or(topk_reaction_correct, kth_reaction_correct)
             te_set_accuracy = sum(topk_reaction_correct)/len(test_set)
