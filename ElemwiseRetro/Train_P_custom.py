@@ -124,174 +124,6 @@ def anion_labeling(composition, pre_anion_part, source_elem):
 
     return y_label
 
-# Check model
-def find_precursors_indiv(tar_composition,
-                          top_k,
-                          model,
-                          device,embedding_dict,pre_anion_part,stoi_dict):
-
-    dataset = []
-    x_tar_set = []
-    elements_seq_set = []
-    for j in range(len(tar_composition)):
-        x_tar, elements_seq = composition2graph(tar_composition[j], embedding_dict)
-        x_tar = add_source_mask(x_tar, get_SourceElem([tar_composition[j]])[0])
-        x_tar_set.append(x_tar)
-        elements_seq_set.append(elements_seq)
-    source_elem_seq = []
-    source_elem_idx = []
-    count=0
-    for elem_seq in elements_seq_set:
-        for elem in elem_seq:
-            if (elem in get_SourceElem(tar_composition)[0]) and (elem not in source_elem_seq):
-                source_elem_seq.append(elem)
-                source_elem_idx.append(count)
-                count+=1
-            elif (elem in get_SourceElem(tar_composition)[0]) and (elem in source_elem_seq):
-                source_elem_idx.append(source_elem_seq.index(elem))
-
-    y = []
-    y2 = []
-    y_stoi = []
-    y_ratio = []
-    y.append(np.zeros(len(pre_anion_part)))
-    y2.append(np.zeros(len(embedding_dict['Li'])))
-    y_stoi.append('')
-    y_ratio.append([])
-    y = torch.Tensor(np.array(y))
-    y2 = torch.Tensor(np.array(y2))
-    dataset.append((x_tar_set, source_elem_idx, y, y2, y_stoi, y_ratio, 0))
-
-    input_tar, metal_mask, source_elem_idx, batch_y, batch_y2, batch_comp, batch_ratio, batch_i = collate_batch(dataset)
-    input_tar = tuple([tensor.to(device) for tensor in input_tar])
-    metal_mask = metal_mask.to(device)
-    source_elem_idx = source_elem_idx.to(device)
-    batch_y = batch_y.to(device)
-    batch_y = torch.where(batch_y==1)[1]
-    pre_set_idx = scatter_mean(input_tar[4][torch.where(metal_mask!=-1)[0]], source_elem_idx, dim=0)
-
-    # compute output
-    template_output, sourceelem_descriptor = model(input_tar, metal_mask, source_elem_idx, pre_set_idx)
-
-    score_matrix = []
-    pred_matrix = []
-    for k in range(top_k):
-        score_matrix.append(torch.kthvalue(F.softmax(template_output, dim=1), template_output.shape[1]-k)[0])
-        pred_matrix.append(torch.kthvalue(F.softmax(template_output, dim=1), template_output.shape[1]-k)[1])
-    score_matrix = torch.stack(score_matrix, dim=0)
-    pred_matrix = torch.stack(pred_matrix, dim=0)
-
-    kth_precursors = []
-    for k in range(top_k):
-        precursors_set = []
-        for l in range(len(source_elem_seq)):
-            pre_score = round(score_matrix[k,l].item(), 4)
-            source_part = source_elem_seq[l]
-            counter_part = list(pre_anion_part)[pred_matrix[k][l]]
-            stoi_space = stoi_dict[source_part+counter_part]
-            if len(stoi_space) == 0:
-                precursors_set.append(('('+source_part+')('+counter_part+')', pre_score))
-            else:
-                precursor = stoi_space[0]
-                precursors_set.append((precursor, pre_score))
-
-        kth_precursors.append(precursors_set)
-
-    return kth_precursors
-
-def find_precursors_set(tar_composition,
-                        top_k,
-                        model,
-                        device,embedding_dict,pre_anion_part,stoi_dict):
-
-    dataset = []
-    x_tar_set = []
-    elements_seq_set = []
-    for j in range(len(tar_composition)):
-        x_tar, elements_seq = composition2graph(tar_composition[j], embedding_dict)
-        x_tar = add_source_mask(x_tar, get_SourceElem([tar_composition[j]])[0])
-        x_tar_set.append(x_tar)
-        elements_seq_set.append(elements_seq)
-    source_elem_seq = []
-    source_elem_idx = []
-    count=0
-    for elem_seq in elements_seq_set:
-        for elem in elem_seq:
-            if (elem in get_SourceElem(tar_composition)[0]) and (elem not in source_elem_seq):
-                source_elem_seq.append(elem)
-                source_elem_idx.append(count)
-                count+=1
-            elif (elem in get_SourceElem(tar_composition)[0]) and (elem in source_elem_seq):
-                source_elem_idx.append(source_elem_seq.index(elem))
-
-    y = []
-    y2 = []
-    y_stoi = []
-    y_ratio = []
-    y.append(np.zeros(len(pre_anion_part)))
-    y2.append(np.zeros(len(embedding_dict['Li'])))
-    y_stoi.append('')
-    y_ratio.append([])
-    y = torch.Tensor(np.array(y))
-    y2 = torch.Tensor(np.array(y2))
-    dataset.append((x_tar_set, source_elem_idx, y, y2, y_stoi, y_ratio, 0))
-
-    input_tar, metal_mask, source_elem_idx, batch_y, batch_y2, batch_comp, batch_ratio, batch_i = collate_batch(dataset)
-    input_tar = tuple([tensor.to(device) for tensor in input_tar])
-    metal_mask = metal_mask.to(device)
-    source_elem_idx = source_elem_idx.to(device)
-    batch_y = batch_y.to(device)
-    batch_y = torch.where(batch_y==1)[1]
-    pre_set_idx = scatter_mean(input_tar[4][torch.where(metal_mask!=-1)[0]], source_elem_idx, dim=0)
-
-    # compute output
-    template_output, sourceelem_descriptor = model(input_tar, metal_mask, source_elem_idx, pre_set_idx)
-
-    score_matrix = []
-    pred_matrix = []
-    for k in range(top_k):
-        score_matrix.append(torch.kthvalue(F.softmax(template_output, dim=1), template_output.shape[1]-k)[0])
-        pred_matrix.append(torch.kthvalue(F.softmax(template_output, dim=1), template_output.shape[1]-k)[1])
-    score_matrix = torch.stack(score_matrix, dim=0)
-    pred_matrix = torch.stack(pred_matrix, dim=0)
-
-    set_score_list = []
-    set_num = template_output.shape[0]
-
-    for elem_idx in range(set_num):
-        if elem_idx == 0:
-            set_score_list = score_matrix[:,elem_idx:elem_idx+1]
-        else:
-            set_score_list = torch.matmul(set_score_list, score_matrix[:,elem_idx:elem_idx+1].T).reshape(-1,1)
-
-    top_k_result = []
-    for k in range(top_k):
-        kst_score = round(torch.kthvalue(set_score_list.T, len(set_score_list)-k)[0].item(), 4)
-        kst_idx = torch.kthvalue(set_score_list.T, len(set_score_list)-k)[1].item()
-        kst_pre_set = []
-        for idx in range(set_num):
-            kst_pre_set.append(pred_matrix[int(kst_idx/(top_k**(set_num-idx-1))), idx].item())
-            kst_idx = kst_idx % (top_k**(set_num-idx-1))
-        top_k_result.append((kst_pre_set, kst_score))
-
-    kth_precursors = []
-    for k in range(len(top_k_result)):
-        set_score = top_k_result[k][1]
-        precursors_set = []
-        for l in range(len(source_elem_seq)):
-            source_part = source_elem_seq[l]
-            counter_part = list(pre_anion_part)[top_k_result[k][0][l]]
-            stoi_space = stoi_dict[source_part+counter_part]
-            if len(stoi_space) == 0:
-                precursors_set.append('('+source_part+')('+counter_part+')')
-            else:
-                precursor = stoi_space[0]
-                precursors_set.append(precursor)
-
-        kth_precursors.append((precursors_set, set_score))
-
-    return kth_precursors
-
 
 if __name__ == "__main__":
 
@@ -311,9 +143,13 @@ if __name__ == "__main__":
     with open(file_path, "r") as json_file:
         pre_anion_part = json.load(json_file)
 
-    file_path = f"./dataset/{dataset_name}/stoi_dict.json"
+    # file_path = f"./dataset/{dataset_name}/stoi_dict.json"
+    # with open(file_path, "r") as json_file:
+    #     stoi_dict = json.load(json_file)
+    
+    file_path = f"./dataset/{dataset_name}/stoi_ll_dict.json"
     with open(file_path, "r") as json_file:
-        stoi_dict = json.load(json_file)
+        stoi_ll_dict = json.load(json_file)
 
     dataset = []
     for i in range(len(data)):
