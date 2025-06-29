@@ -230,10 +230,12 @@ if __name__ == "__main__":
         
         if split_type == 'train':
             train_set.append(dataset_item)
-        elif split_type == 'valid':
+        elif split_type == 'val':
             val_set.append(dataset_item)
         elif split_type == 'test':
             test_set.append(dataset_item)
+        else:
+            raise NotImplementedError(f"Split type {split_type} not recognized")
     print("Total dataset size : %d, (train/val/test = %d/%d/%d)" % (len(dataset), len(train_set), len(val_set), len(test_set)))
 
     data_params = {"batch_size": 128, "num_workers": 0, "pin_memory": False,
@@ -259,100 +261,98 @@ if __name__ == "__main__":
     gru_mode = args.gru_mode        # True : After GCN, GRU prediction         / False : After GCN, ResNet prediction
     print('[Pooling', pooling_mode, ', Globalfactor', globalfactor, ', GRU', gru_mode, '] mode')
 
-    # model_params = {
-    #         "task": "Classification",
-    #         "pooling": pooling_mode,
-    #         "globalfactor": globalfactor,
-    #         "gru": gru_mode,
-    #         "device": device,
-    #         "robust": False,
-    #         "n_targets": len(pre_anion_part),
-    #         "elem_emb_len": len(embedding_dict['Li']),
-    #         "elem_fea_len": 64,
-    #         "n_graph": 3,
-    #         "elem_heads": 3,
-    #         "elem_gate": [256],
-    #         "elem_msg": [256],
-    #         "cry_heads": 3,
-    #         "cry_gate": [256],
-    #         "cry_msg": [256],
-    #         #"out_hidden": [1024, 512, 256, 128, 64],
-    #         "out_hidden": [512, 512, 512],
-    #     }
-    # model =  PrecursorClassifier(**model_params)
+    model_params = {
+            "task": "Classification",
+            "pooling": pooling_mode,
+            "globalfactor": globalfactor,
+            "gru": gru_mode,
+            "device": device,
+            "robust": False,
+            "n_targets": len(pre_anion_part),
+            "elem_emb_len": len(embedding_dict['Li']),
+            "elem_fea_len": 64,
+            "n_graph": 3,
+            "elem_heads": 3,
+            "elem_gate": [256],
+            "elem_msg": [256],
+            "cry_heads": 3,
+            "cry_gate": [256],
+            "cry_msg": [256],
+            #"out_hidden": [1024, 512, 256, 128, 64],
+            "out_hidden": [512, 512, 512],
+        }
+    model =  PrecursorClassifier(**model_params)
 
-    # # Prepare learning parameters
-    # num_epoch = 50
-    # criterion = nn.CrossEntropyLoss()
-    # lr = 3e-4
-    # weight_decay=1e-6
-    # optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # Prepare learning parameters
+    num_epoch = 50
+    criterion = nn.CrossEntropyLoss()
+    lr = 3e-4
+    weight_decay=1e-6
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
 
-    # # Train process
-    # model.to(device)
+    # Train process
+    model.to(device)
 
-    # train_loss_curve = []
-    # val_loss_curve = []
+    train_loss_curve = []
+    val_loss_curve = []
 
-    # best_val_loss = 10000000
-    # best_model_wts = copy.deepcopy(model.state_dict())
-    # for i in range(num_epoch):
-    #     loss_list = []
-    #     model.train()
-    #     for input_tar, metal_mask, source_elem_idx, batch_y, batch_y2, batch_comp, batch_ratio, batch_i in train_generator:
-    #         # move tensors to device (GPU or CPU)
-    #         input_tar = tuple([tensor.to(device) for tensor in input_tar])
-    #         metal_mask = metal_mask.to(device)
-    #         source_elem_idx = source_elem_idx.to(device)
-    #         batch_y = batch_y.to(device)
-    #         batch_y_id = torch.where(batch_y==1)[1]
-    #         batch_y2 = batch_y2.to(device)
-    #         pre_set_idx = scatter_mean(input_tar[4][torch.where(metal_mask!=-1)[0]], source_elem_idx, dim=0)
+    best_val_loss = 10000000
+    best_model_wts = copy.deepcopy(model.state_dict())
+    for i in range(num_epoch):
+        loss_list = []
+        model.train()
+        for input_tar, metal_mask, source_elem_idx, batch_y, batch_y2, batch_comp, batch_ratio, batch_i in train_generator:
+            # move tensors to device (GPU or CPU)
+            input_tar = tuple([tensor.to(device) for tensor in input_tar])
+            metal_mask = metal_mask.to(device)
+            source_elem_idx = source_elem_idx.to(device)
+            batch_y = batch_y.to(device)
+            batch_y_id = torch.where(batch_y==1)[1]
+            batch_y2 = batch_y2.to(device)
+            pre_set_idx = scatter_mean(input_tar[4][torch.where(metal_mask!=-1)[0]], source_elem_idx, dim=0)
 
-    #         # compute output
-    #         template_output, atomic_descriptor = model(input_tar, metal_mask, source_elem_idx, pre_set_idx)
-    #         loss = criterion(template_output, batch_y_id)
-    #         loss_list.append(loss.data.cpu().numpy())
+            # compute output
+            template_output, atomic_descriptor = model(input_tar, metal_mask, source_elem_idx, pre_set_idx)
+            loss = criterion(template_output, batch_y_id)
+            loss_list.append(loss.data.cpu().numpy())
 
-    #         # compute gradient and take an optimizer step
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         optimizer.step()
+            # compute gradient and take an optimizer step
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-    #     train_loss = np.mean(np.array(loss_list))
+        train_loss = np.mean(np.array(loss_list))
 
-    #     val_loss_list = []
-    #     model.eval()
-    #     with torch.no_grad(): # Make zero gradient
-    #         for input_tar, metal_mask, source_elem_idx, batch_y, batch_y2, batch_comp, batch_ratio, batch_i in val_generator:
-    #             # move tensors to device (GPU or CPU)
-    #             input_tar = tuple([tensor.to(device) for tensor in input_tar])
-    #             metal_mask = metal_mask.to(device)
-    #             source_elem_idx = source_elem_idx.to(device)
-    #             batch_y = batch_y.to(device)
-    #             batch_y_id = torch.where(batch_y==1)[1]
-    #             batch_y2 = batch_y2.to(device)
-    #             pre_set_idx = scatter_mean(input_tar[4][torch.where(metal_mask!=-1)[0]], source_elem_idx, dim=0)
+        val_loss_list = []
+        model.eval()
+        with torch.no_grad(): # Make zero gradient
+            for input_tar, metal_mask, source_elem_idx, batch_y, batch_y2, batch_comp, batch_ratio, batch_i in val_generator:
+                # move tensors to device (GPU or CPU)
+                input_tar = tuple([tensor.to(device) for tensor in input_tar])
+                metal_mask = metal_mask.to(device)
+                source_elem_idx = source_elem_idx.to(device)
+                batch_y = batch_y.to(device)
+                batch_y_id = torch.where(batch_y==1)[1]
+                batch_y2 = batch_y2.to(device)
+                pre_set_idx = scatter_mean(input_tar[4][torch.where(metal_mask!=-1)[0]], source_elem_idx, dim=0)
 
-    #             # compute output
-    #             template_output, atomic_descriptor = model(input_tar, metal_mask, source_elem_idx, pre_set_idx)
-    #             loss = criterion(template_output, batch_y_id)
-    #             val_loss_list.append(loss.data.cpu().numpy())
+                # compute output
+                template_output, atomic_descriptor = model(input_tar, metal_mask, source_elem_idx, pre_set_idx)
+                loss = criterion(template_output, batch_y_id)
+                val_loss_list.append(loss.data.cpu().numpy())
 
-    #     val_loss = np.mean(np.array(val_loss_list))
-    #     if (i+1)%10==0:
-    #         print ('Epoch ', i+1, ', training loss: ', train_loss, ', val loss: ',val_loss)
-    #     train_loss_curve.append(train_loss)
-    #     val_loss_curve.append(val_loss)
+        val_loss = np.mean(np.array(val_loss_list))
+        if (i+1)%10==0:
+            print ('Epoch ', i+1, ', training loss: ', train_loss, ', val loss: ',val_loss)
+        train_loss_curve.append(train_loss)
+        val_loss_curve.append(val_loss)
 
-    #     if best_val_loss > val_loss:
-    #         best_val_loss = val_loss
-    #         best_model_wts = copy.deepcopy(model.state_dict())
+        if best_val_loss > val_loss:
+            best_val_loss = val_loss
+            best_model_wts = copy.deepcopy(model.state_dict())
 
-    # model.load_state_dict(best_model_wts) # load best model weights
-    # pk.dump(model, open(f'./model/trained_model_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
-    model = pk.load(open(f'./model/trained_model_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'rb'))
+    model.load_state_dict(best_model_wts) # load best model weights
 
     model.eval()
 
@@ -519,12 +519,12 @@ if __name__ == "__main__":
             print("Top-%d Strict Precursor Accuracy for precursors_set of testset : %f" %(k+1, round(float(te_strict_set_accuracy),4)))
             accuracy_result['Top-'+str(k+1)+'_strict_precursor_set_acc'] = round(float(te_strict_set_accuracy),4)
       
-    # train_val_loss = {'Model_train_loss_curve' : train_loss_curve,
-    #                   'Model_val_loss_curve'   : val_loss_curve,
-    #                   }
+    train_val_loss = {'Model_train_loss_curve' : train_loss_curve,
+                      'Model_val_loss_curve'   : val_loss_curve,
+                      }
     
     pk.dump(idx_te, open('./dataset/test_idx_TP.sav', 'wb'))
     pk.dump(dataset, open('./dataset/preprocessed_data_TP.sav', 'wb'))
     pk.dump(accuracy_result, open(f'./result/accuracy_result_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
-    # pk.dump(train_val_loss, open(f'./result/train_val_loss_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
-    # pk.dump(model, open(f'./model/trained_model_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
+    pk.dump(train_val_loss, open(f'./result/train_val_loss_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
+    pk.dump(model, open(f'./model/trained_model_TP_{dataset_name}_{pooling_mode}{globalfactor}{gru_mode}.sav', 'wb'))
