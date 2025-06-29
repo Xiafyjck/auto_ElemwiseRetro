@@ -383,8 +383,13 @@ def most_frequent_stoi_dict_from_source_template(reactions, pre_total_anions):
 
     return stoi_dict, most_count, minor_count
 
-def main():
-    dataset_name = "retro"
+def main(dataset_name=None):
+    if dataset_name is None:
+        import argparse
+        parser = argparse.ArgumentParser(description='Process dataset for ElemwiseRetro')
+        parser.add_argument('--dataset_name', type=str, default='retro', help='Dataset name')
+        args = parser.parse_args()
+        dataset_name = args.dataset_name
     
     precursor_ids_path = f"data_processing/raw/{dataset_name}_precursor_id.json"
     reactions_path = f"data_processing/raw/{dataset_name}_split.csv"

@@ -471,22 +471,6 @@ if __name__ == "__main__":
     accuracy_result = {}
 
     for k in range(template_top_k_pred_te.shape[0]):
-        if k == 0:
-            b = (template_top_k_pred_te[k] == template_true_value_te).float()
-            topk_reaction_correct = scatter_min(b, pre_set_idx_te.cpu(), dim=0)[0]
-            te_set_accuracy = sum(topk_reaction_correct)/len(test_set)
-            print("Top-%d Template Accuracy for precursors_template_set of testset : %f" %(k+1, round(float(te_set_accuracy),4)))
-            accuracy_result['Top-'+str(k+1)+'_template_set_acc'] = round(float(te_set_accuracy),4)
-        else:
-            kth_b = (template_top_k_pred_te[k] == template_true_value_te).float()
-            kth_reaction_correct = scatter_min(kth_b, pre_set_idx_te.cpu(), dim=0)[0]
-            topk_reaction_correct = torch.logical_or(topk_reaction_correct, kth_reaction_correct)
-            te_set_accuracy = sum(topk_reaction_correct)/len(test_set)
-            print("Top-%d Template Accuracy for precursors_template_set of testset : %f" %(k+1, round(float(te_set_accuracy),4)))
-            accuracy_result['Top-'+str(k+1)+'_template_set_acc'] = round(float(te_set_accuracy),4)
-    
-    # Strict top-k precursor accuracy (considering stoichiometry via stoi_dict)
-    for k in range(template_top_k_pred_te.shape[0]):
         # Convert predicted templates to actual precursors for this k
         kth_predicted_precursors = []
         for i, pred_template_idx in enumerate(template_top_k_pred_te[k]):
@@ -510,13 +494,15 @@ if __name__ == "__main__":
         if k == 0:
             topk_strict_reaction_correct = scatter_min(kth_strict_correct_tensor, pre_set_idx_te.cpu(), dim=0)[0]
             te_strict_set_accuracy = sum(topk_strict_reaction_correct)/len(test_set)
-            print("Top-%d Strict Precursor Accuracy for precursors_set of testset : %f" %(k+1, round(float(te_strict_set_accuracy),4)))
+            print(f"sum of top {k+1} reaction correct: {sum(topk_strict_reaction_correct)}, ", end="")
+            print("Top-%d Precursor Accuracy for precursors_set of testset : %f" %(k+1, round(float(te_strict_set_accuracy),4)))
             accuracy_result['Top-'+str(k+1)+'_strict_precursor_set_acc'] = round(float(te_strict_set_accuracy),4)
         else:
             kth_strict_reaction_correct = scatter_min(kth_strict_correct_tensor, pre_set_idx_te.cpu(), dim=0)[0]
             topk_strict_reaction_correct = torch.logical_or(topk_strict_reaction_correct, kth_strict_reaction_correct)
             te_strict_set_accuracy = sum(topk_strict_reaction_correct)/len(test_set)
-            print("Top-%d Strict Precursor Accuracy for precursors_set of testset : %f" %(k+1, round(float(te_strict_set_accuracy),4)))
+            print(f"sum of top {k+1} reaction correct: {sum(topk_strict_reaction_correct)}, ", end="")
+            print("Top-%d Precursor Accuracy for precursors_set of testset : %f" %(k+1, round(float(te_strict_set_accuracy),4)))
             accuracy_result['Top-'+str(k+1)+'_strict_precursor_set_acc'] = round(float(te_strict_set_accuracy),4)
       
     train_val_loss = {'Model_train_loss_curve' : train_loss_curve,
