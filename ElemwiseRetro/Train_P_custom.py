@@ -220,10 +220,21 @@ if __name__ == "__main__":
             else:
                 print(p_source_elem[0], template, r_stoi_list[j], r_int_comp, pre)
 
-    train_set, test_set = train_test_split(dataset, test_size=0.1, random_state=7)
-    train_set, val_set = train_test_split(train_set, test_size=0.1112, random_state=7)
-
-    print("Total dataset size : %d, (train/val/test = %d/%d/%d = 8:1:1)" % (len(dataset), len(train_set), len(val_set), len(test_set)))
+    # Split dataset based on 'split' attribute in original data
+    train_set = []
+    val_set = []
+    test_set = []
+    for dataset_item in dataset:
+        original_idx = dataset_item[6]  # Index in original data
+        split_type = data[original_idx]['split']
+        
+        if split_type == 'train':
+            train_set.append(dataset_item)
+        elif split_type == 'valid':
+            val_set.append(dataset_item)
+        elif split_type == 'test':
+            test_set.append(dataset_item)
+    print("Total dataset size : %d, (train/val/test = %d/%d/%d)" % (len(dataset), len(train_set), len(val_set), len(test_set)))
 
     data_params = {"batch_size": 128, "num_workers": 0, "pin_memory": False,
                    "shuffle": False, "collate_fn": collate_batch,
